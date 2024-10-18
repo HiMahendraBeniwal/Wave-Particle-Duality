@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wave-Particle Duality Simulation</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        canvas {
+            border: 1px solid black;
+        }
+
+        .controls {
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 34px;
+            height: 20px;
+            margin-left: 10px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(14px);
+        }
+        .author {
+            display: flex;
+            text-align: right;
+        }
+    </style>
+</head>
+<body>
+
+    <h1 style="text-align:center;">Wave-Particle Duality Simulation By Double Slit Experiment</h1>
+    
+    <canvas id="canvas" width="800" height="400"></canvas>
+
+    <div class="controls">
+        <span>Observer:</span>
+        <label class="switch">
+            <input type="checkbox" id="observerSwitch">
+            <span class="slider"></span>
+        </label>
+    </div>
+    <ul>
+        <li>If the button is off it means there is no observer. This is why electron beams are looking like a wave.</li>
+        <li>If the button is on it means there is an observer. This is why electron beams are looking like a particle.</li>
+        <li>Electron beams are just for an example, but this illustrates that any kind of matter in the universe exhibits this property.</li>
+    </ul>
+    <h6 class="author">~ Mahendra Beniwal</h6>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const observerSwitch = document.getElementById('observerSwitch');
+
+        let particles = [];
+        const particleCount = 1000;
+        const slitWidth = 10;
+        const slitSpacing = 40;
+        const slitY = canvas.height / 2;
+
+        let isObserving = false;
+
+        // Initialize particles
+        for (let i = 0; i < particleCount; i++) {
+          particles.push({
+              x: Math.random() * canvas.width / 4,
+              y: Math.random() * canvas.height,
+              vx: Math.random() * 0.7 + 0.1, // Reduced speed range - the range of speed of electrons
+              vy: (Math.random() - 0.5) * 2,
+              passed: false,
+              path: []
+          });
+        }
+
+        observerSwitch.addEventListener('change', () => {
+          isObserving = observerSwitch.checked;
+        });
+
+        const animate = () => {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+          // Draw slits
+          ctx.fillStyle = 'black';
+          ctx.fillRect(canvas.width / 2 - 5, 0, 10, slitY - slitSpacing / 2 - slitWidth / 2);
+          ctx.fillRect(canvas.width / 2 - 5, slitY - slitSpacing / 2 + slitWidth / 2, 
+                      10, slitSpacing - slitWidth);
+          ctx.fillRect(canvas.width / 2 - 5, slitY + slitSpacing / 2 + slitWidth / 2, 
+                      10, canvas.height - (slitY + slitSpacing / 2 + slitWidth / 2));
+
+          // Draw observer if active
+          if (isObserving) {
+              ctx.fillStyle = 'rgba(0,255,0,0.3)';
+              ctx.fillRect(canvas.width / 2 + 10, 0, 20, canvas.height);
+          }
+
+          // Update and draw particles
+          particles.forEach(particle => {
+              particle.x += particle.vx; // Move particle
+
+              if (particle.x > canvas.width / 2 - 5 && particle.x < canvas.width / 2 + 5) {
+                  if ((particle.y > slitY - slitSpacing / 2 - slitWidth / 2 && 
+                       particle.y < slitY - slitSpacing / 2 + slitWidth / 2) ||
+                      (particle.y > slitY + slitSpacing / 2 - slitWidth / 2 && 
+                       particle.y < slitY + slitSpacing / 2 + slitWidth / 2)) {
+                      particle.passed = true; // Particle passed through the slits
+                  } else {
+                      particle.vx = -particle.vx; // Bounce back
+                  }
+              }
+
+              if (particle.x < 0 || particle.x > canvas.width || 
+                  particle.y < 0 || particle.y > canvas.height) {
+                  // Reset particle
+                  particle.x = Math.random() * canvas.width / 4;
+                  particle.y = Math.random() * canvas.height;
+                  particle.passed = false; 
+                  particle.path = [];
+              }
+
+              if (particle.passed) {
+                  if (isObserving && particle.x > canvas.width / 2 + 
+                      10 && particle.x < canvas.width / 2 + 
+                      30) {
+                      // Particle behavior when observed
+                      ctx.fillStyle = 'rgba(255,0,0,.8)';
+                      ctx.beginPath();
+                      ctx.arc(particle.x, particle.y, 
+                              Math.random() * (5 - .5) + .5 , 
+                              Math.PI * Math.random(), Math.PI * Math.random());
+                      ctx.fill();
+                  } else {
+                      // Wave-like behavior when not observed
+                      const dx1 = particle.x - (canvas.width / 
+                                                  (isObserving ? .8 : .9));
+                      const dy1 = particle.y - (slitY - 
+                                                  slitSpacing / 
+                                                  (isObserving ? .8 : .9));
+                      const dx2 = particle.x - (canvas.width /
+                                                  (isObserving ? .8 : .9));
+                      const dy2 = particle.y - (slitY + 
+                                                  slitSpacing /
+                                                  (isObserving ? .8 : .9));
+                      const distance1 = Math.sqrt(dx1 * dx1 + dy1 * dy1);
+                      const distance2 = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                      const phase = (distance1 - distance2) * 
+                                    ((isObserving ? .3 : .5));
+                      const intensity = Math.cos(phase) * Math.cos(phase);
+
+                      ctx.strokeStyle = `rgba(0, 
+                                              ${Math.floor(intensity * 
+                                              (isObserving ? .3 : .9) * 
+                                              Math.floor(Math.random() * 
+                                              (255)))}, ${intensity})`;
+                      
+                      ctx.beginPath();
+                      particle.path.push({ x: particle.x, y: particle.y });
+                      if (particle.path.length > 
+                          (isObserving ? Math.floor(Math.random() * 
+                          (40)) : Math.floor(Math.random() *
+                          (20)))) { 
+                          particle.path.shift(); }
+                      
+                          // Draw the path of the wave-like behavior
+                          for(let p of particle.path){
+                              ctx.lineTo(p.x,p.y);
+                          }
+                          ctx.stroke();
+                  }
+              } else {
+                  // Draw particles that haven't passed through slits
+                  ctx.fillStyle = 'rgba(255,0,0,.5)';
+                  ctx.beginPath();
+                  ctx.arc(particle.x, particle.y, 
+                          Math.random() * (3 - .5) + .5 , 
+                          Math.PI * Math.random(), Math.PI * Math.random());
+                  ctx.fill();
+              }
+          });
+
+          requestAnimationFrame(animate);
+      };
+
+      animate(); // Start the animation loop
+
+    </script>
+</body>
+</html>
